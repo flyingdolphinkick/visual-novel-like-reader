@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-translate="pageTitle">Leitor Estilo Visual Novel</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Lora:ital,wght@0,400;0,700;1,400&family=Roboto+Slab:wght@400;700&family=Source+Code+Pro:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out;
+        }
+
+        #textDisplay {
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+            transition: color 0.5s ease-in-out;
+        }
+
+        .custom-range::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #4f46e5;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        .custom-range::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #4f46e5;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        
+        .button-container {
+            padding-bottom: env(safe-area-inset-bottom, 1rem); /* Adiciona padding para barras de navegação do OS */
+        }
+        
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fade-in 0.5s ease-out forwards;
+        }
+        
+        /* Custom Scrollbar for Modals */
+        #settingsModal > div::-webkit-scrollbar,
+        #helpModal > div::-webkit-scrollbar {
+            width: 8px;
+        }
+        #settingsModal > div::-webkit-scrollbar-track,
+        #helpModal > div::-webkit-scrollbar-track {
+            background: #1f2937; /* bg-gray-800 */
+        }
+        #settingsModal > div::-webkit-scrollbar-thumb,
+        #helpModal > div::-webkit-scrollbar-thumb {
+            background: #4b5563; /* bg-gray-600 */
+            border-radius: 4px;
+        }
+        #settingsModal > div::-webkit-scrollbar-thumb:hover,
+        #helpModal > div::-webkit-scrollbar-thumb:hover {
+            background: #6b7280; /* bg-gray-500 */
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white flex items-center justify-center min-h-screen transition-all duration-500" style="background-image: url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?q=80&w=2728&auto-format&fit=crop');">
+
+    <div id="app-container" class="w-full h-full">
+
+        <!-- Tela de Configuração -->
+        <div id="setupScreen" class="bg-gray-900 bg-opacity-80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl text-center transition-opacity duration-500 w-full max-w-4xl mx-auto mt-10">
+            <div class="flex justify-center items-center gap-4 mb-2">
+                 <h1 class="text-3xl md:text-4xl font-bold" data-translate="title">Leitor Estilo Visual Novel</h1>
+                 <button id="helpButton" class="bg-gray-700 hover:bg-gray-600 text-white font-bold w-9 h-9 rounded-full transition duration-300 text-lg flex items-center justify-center shrink-0">?</button>
+                 <select id="languageSelector" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2">
+                    <option value="pt-BR">Português</option>
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
+                    <option value="hi">हिन्दी</option>
+                    <option value="ja">日本語</option>
+                    <option value="zh-CN">中文</option>
+                    <option value="ko">한국어</option>
+                </select>
+            </div>
+            <p class="text-gray-300 mb-6" data-translate="subtitle">Cole o seu texto abaixo. Use # para títulos, **negrito**, *itálico* e comandos como [bg:URL] ou [colorbg:#código].</p>
+
+            <textarea id="textInput" class="w-full h-48 bg-gray-800 border border-gray-700 rounded-lg p-4 text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-500" data-translate="placeholder" placeholder="# Capítulo 1&#10;[bg:https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0]&#10;O cavaleiro chegou a uma floresta.&#10;[colorbg:#1a202c]&#10;De repente, a noite caiu."></textarea>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 my-6">
+                <!-- Bloco de Fundo -->
+                <div class="md:col-span-2">
+                    <div class="bg-gray-800 p-4 rounded-lg">
+                        <label class="block mb-4 text-sm font-medium text-gray-300" data-translate="bgSetup">Configuração do Fundo</label>
+                        <div class="flex gap-2 mb-4">
+                            <button id="bgTypeImage" class="flex-1 bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors" data-translate="bgImage">Imagem</button>
+                            <button id="bgTypeColor" class="flex-1 bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors" data-translate="bgColor">Cor Sólida</button>
+                        </div>
+                        <div id="bgImageUrlContainer">
+                            <label for="bgImageUrlInput" class="block mb-2 text-xs font-medium text-gray-400" data-translate="imageUrl">URL da Imagem</label>
+                            <input type="url" id="bgImageUrlInput" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-white focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="https://exemplo.com/imagem.jpg">
+                        </div>
+                        <div id="bgColorContainer" class="hidden">
+                            <label for="bgColorInput" class="block mb-2 text-xs font-medium text-gray-400" data-translate="bgColorLabel">Cor de Fundo</label>
+                            <input type="color" id="bgColorInput" value="#111827" class="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-lg cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Outros Controles -->
+                <div id="speedSliderContainer">
+                    <label for="speedSlider" class="block mb-2 text-sm font-medium text-gray-300"><span data-translate="speedLabel">Velocidade (ppm)</span>: <span id="speedValue">150</span></label>
+                    <input id="speedSlider" type="range" min="50" max="400" value="150" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer custom-range">
+                </div>
+                <div>
+                    <label for="typingSpeedSlider" class="block mb-2 text-sm font-medium text-gray-300"><span data-translate="typingSpeedLabel">Digitação (cps)</span>: <span id="typingSpeedValue">50</span></label>
+                    <input id="typingSpeedSlider" type="range" min="10" max="100" value="50" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer custom-range">
+                </div>
+                <div>
+                    <label for="volumeSlider" class="block mb-2 text-sm font-medium text-gray-300"><span data-translate="soundVolumeLabel">Volume do Som</span>: <span id="volumeValue">50%</span></label>
+                    <input id="volumeSlider" type="range" min="0" max="100" value="50" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer custom-range">
+                </div>
+                 <div>
+                    <label for="fontColorInput" class="block mb-2 text-sm font-medium text-gray-300" data-translate="fontColorLabel">Cor da Fonte</label>
+                    <input type="color" id="fontColorInput" value="#FFFFFF" class="w-full h-10 p-1 bg-gray-800 border border-gray-700 rounded-lg cursor-pointer">
+                </div>
+            </div>
+            
+            <div class="flex items-center justify-center gap-8 mb-6">
+                <label for="typewriterToggle" class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="typewriterToggle" class="sr-only peer" checked>
+                    <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <span class="ml-3 text-sm font-medium text-gray-300" data-translate="typewriterEffect">Efeito Máquina de Escrever</span>
+                </label>
+                <label for="soundToggle" class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="soundToggle" class="sr-only peer" checked>
+                    <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <span class="ml-3 text-sm font-medium text-gray-300" data-translate="typingSound">Som da Digitação</span>
+                </label>
+            </div>
+            
+            <p id="messageArea" class="text-yellow-300 h-6"></p>
+
+            <div class="flex flex-col md:flex-row gap-4 justify-center items-center mt-2">
+                <button id="openFileButton" class="w-full md:w-auto bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-6 rounded-full transition-transform transform hover:scale-105 duration-300" data-translate="openFile">Abrir Ficheiro (.txt)</button>
+                <button id="startButton" class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-10 rounded-full text-lg transition-transform transform hover:scale-105 duration-300" data-translate="startReading">
+                    Iniciar Leitura
+                </button>
+                <button id="loadBookmarkButton" class="w-full md:w-auto bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-full transition-transform transform hover:scale-105 duration-300 disabled:bg-gray-500" data-translate="loadBookmark" disabled>Carregar Marcador</button>
+            </div>
+        </div>
+
+        <!-- Tela de Leitura -->
+        <div id="readingScreen" class="hidden h-screen w-screen flex flex-col items-center justify-between text-center transition-opacity duration-500 p-8 relative">
+             <p id="messageAreaReading" class="text-yellow-300 h-6 absolute top-8"></p>
+            <div class="flex-grow flex items-center justify-center">
+                 <div id="textDisplay" class="text-2xl md:text-4xl lg:text-5xl font-semibold leading-relaxed bg-black bg-opacity-60 p-8 rounded-xl"></div>
+            </div>
+            <div class="button-container flex flex-wrap items-center justify-center gap-3">
+                <button id="prevButton" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-8 rounded-full transition duration-300" data-translate="prevButton">Anterior</button>
+                <button id="continueButton" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full transition duration-300" data-translate="pauseButton">Pausar</button>
+                <button id="nextButton" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-8 rounded-full transition duration-300" data-translate="nextButton">Próximo</button>
+                <button id="saveBookmarkButtonReading" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-full transition duration-300" data-translate="saveBookmark">Salvar Marcador</button>
+                <button id="settingsButton" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-8 rounded-full transition duration-300" data-translate="optionsButton">Opções</button>
+                <button id="resetButton" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full transition duration-300" data-translate="exitButton">Sair</button>
+            </div>
+        </div>
+    </div>
+    
+    <input type="file" id="fileInput" class="hidden" accept=".txt, text/plain">
+
+    <!-- Modal de Opções -->
+    <div id="settingsModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+        <div class="bg-gray-800 text-white p-8 rounded-2xl shadow-2xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+            <h2 class="text-2xl font-bold mb-6 text-center" data-translate="readingOptions">Opções de Leitura</h2>
+            
+            <div class="mb-4">
+                <label for="fontColorInputModal" class="block mb-2 text-sm font-medium text-gray-300" data-translate="fontColorLabel">Cor da Fonte</label>
+                <input type="color" id="fontColorInputModal" value="#FFFFFF" class="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-lg cursor-pointer">
+            </div>
+             <div class="mb-4">
+                <label for="fontFamilySelect" class="block mb-2 text-sm font-medium text-gray-300" data-translate="fontLabel">Fonte do Texto</label>
+                <select id="fontFamilySelect" class="w-full bg-gray-700 border border-gray-600 text-white text-sm rounded-lg p-2.5">
+                    <option>Inter</option>
+                    <option>Lora</option>
+                    <option>Roboto Slab</option>
+                    <option>Source Code Pro</option>
+                </select>
+            </div>
+            <div class="mb-6">
+                <label for="fontSizeSlider" class="block mb-2 text-sm font-medium text-gray-300"><span data-translate="fontSizeLabel">Tamanho da Fonte</span>: <span id="fontSizeValue">100%</span></label>
+                <input id="fontSizeSlider" type="range" min="80" max="200" value="100" step="10" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer custom-range">
+            </div>
+
+            <hr class="border-gray-600 my-6">
+
+            <div id="speedSliderModalContainer" class="mb-4">
+                <label for="speedSliderModal" class="block mb-2 text-sm font-medium text-gray-300"><span data-translate="speedLabel">Velocidade (ppm)</span>: <span id="speedValueModal">150</span></label>
+                <input id="speedSliderModal" type="range" min="50" max="400" value="150" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer custom-range">
+            </div>
+            <div class="mb-4">
+                <label for="typingSpeedSliderModal" class="block mb-2 text-sm font-medium text-gray-300"><span data-translate="typingSpeedLabel">Digitação (cps)</span>: <span id="typingSpeedValueModal">50</span></label>
+                <input id="typingSpeedSliderModal" type="range" min="10" max="100" value="50" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer custom-range">
+            </div>
+            <div class="mb-4">
+                <label for="volumeSliderModal" class="block mb-2 text-sm font-medium text-gray-300"><span data-translate="soundVolumeLabel">Volume do Som</span>: <span id="volumeValueModal">50%</span></label>
+                <input id="volumeSliderModal" type="range" min="0" max="100" value="50" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer custom-range">
+            </div>
+            
+            <hr class="border-gray-600 my-6">
+
+            <div class="mb-4">
+                <label class="block mb-2 text-sm font-medium text-gray-300" data-translate="bgType">Tipo de Fundo</label>
+                <div class="flex gap-2">
+                    <button id="bgTypeImageModal" class="flex-1 bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors" data-translate="bgImage">Imagem</button>
+                    <button id="bgTypeColorModal" class="flex-1 bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-colors" data-translate="bgColor">Cor</button>
+                </div>
+            </div>
+            <div id="bgColorContainerModal" class="mb-4">
+                <label for="bgColorInputModal" class="block mb-2 text-sm font-medium text-gray-300" data-translate="bgColorLabel">Cor de Fundo</label>
+                <input type="color" id="bgColorInputModal" value="#111827" class="w-full h-10 p-1 bg-gray-700 border border-gray-600 rounded-lg cursor-pointer">
+            </div>
+
+            <hr class="border-gray-600 my-6">
+            
+            <div class="flex items-center justify-center gap-8 mb-6">
+                <label for="typewriterToggleModal" class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="typewriterToggleModal" class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <span class="ml-3 text-sm font-medium text-gray-300" data-translate="typing">Digitação</span>
+                </label>
+                 <label for="soundToggleModal" class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" id="soundToggleModal" class="sr-only peer">
+                    <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-800 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    <span class="ml-3 text-sm font-medium text-gray-300" data-translate="sound">Som</span>
+                </label>
+            </div>
+            <button id="closeSettingsButton" class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full transition" data-translate="closeButton">Fechar</button>
+        </div>
+    </div>
+
+    <!-- Modal de Ajuda -->
+    <div id="helpModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+        <div class="bg-gray-800 text-white p-8 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <h2 class="text-2xl font-bold mb-6 text-center" data-translate="helpTitle">Guia Rápido</h2>
+            <div class="text-left space-y-4 text-gray-300" data-translate="helpContent">
+                <div>
+                    <h3 class="font-semibold text-lg text-white mb-2">1. Começar a Ler</h3>
+                    <p>Pode <strong>colar</strong> o seu texto diretamente na caixa de texto ou carregar um ficheiro de texto local clicando em <strong>"Abrir Ficheiro (.txt)"</strong>.</p>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-lg text-white mb-2">2. Formatação do Texto</h3>
+                    <p>Para enriquecer a sua leitura, pode usar os seguintes códigos de formatação no seu texto:</p>
+                    <ul class="list-disc list-inside mt-2 space-y-1 pl-4">
+                        <li><code># Título do Capítulo</code> - Cria um título grande.</li>
+                        <li><code>**texto em negrito**</code> - Deixa o texto a <strong>negrito</strong>.</li>
+                        <li><code>*texto em itálico*</code> - Deixa o texto em <em>itálico</em>.</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-lg text-white mb-2">3. Comandos Dinâmicos (Visual Novel)</h3>
+                    <p>Para uma experiência de visual novel, coloque estes comandos em linhas separadas para alterar o fundo durante a leitura automática:</p>
+                    <ul class="list-disc list-inside mt-2 space-y-1 pl-4">
+                        <li><code>[bg:URL_DA_IMAGEM]</code> - Muda a imagem de fundo.</li>
+                        <li><code>[colorbg:#código_hex]</code> - Muda para uma cor de fundo sólida (ex: <code>[colorbg:#1a202c]</code>).</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-lg text-white mb-2">4. Guardar o Progresso</h3>
+                    <p>Cada texto tem o seu próprio marcador. Use <strong>"Salvar Marcador"</strong> durante a leitura. Ao colar ou abrir o mesmo texto novamente, o botão <strong>"Carregar Marcador"</strong> ficará disponível.</p>
+                </div>
+                 <div>
+                    <h3 class="font-semibold text-lg text-white mb-2">5. Personalização</h3>
+                    <p>Pode ajustar várias opções antes de começar ou durante a leitura através do botão <strong>"Opções"</strong>, como velocidade, som da digitação, fontes e cores.</p>
+                </div>
+            </div>
+            <button id="closeHelpButton" class="w-full mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full transition" data-translate="closeButton">Fechar</button>
+        </div>
+    </div>
+    
+    <script>
+        // --- Sistema de Tradução ---
+        const translations = {
+            'pt-BR': {
+                pageTitle: "Leitor Estilo Visual Novel",
+                title: "Leitor Estilo Visual Novel",
+                subtitle: "Cole o seu texto abaixo. Use # para títulos, **negrito**, *itálico* e comandos como [bg:URL] ou [colorbg:#código].",
+                placeholder: "# Capítulo 1\n[bg:https://.../imagem.jpg]\nO cavaleiro chegou...\n[colorbg:#1a202c]\nDe repente, a noite caiu.",
+                bgSetup: "Configuração do Fundo",
+                bgImage: "Imagem",
+                bgColor: "Cor Sólida",
+                imageUrl: "URL da Imagem",
+                bgColorLabel: "Cor de Fundo",
+                speedLabel: "Velocidade (ppm)",
+                typingSpeedLabel: "Digitação (cps)",
+                soundVolumeLabel: "Volume do Som",
+                fontColorLabel: "Cor da Fonte",
+                typewriterEffect: "Efeito Máquina de Escrever",
+                typingSound: "Som da Digitação",
+                openFile: "Abrir Ficheiro (.txt)",
+                startReading: "Iniciar Leitura",
+                loadBookmark: "Carregar Marcador",
+                prevButton: "Anterior",
+                pauseButton: "Pausar",
+                continueButton: "Continuar",
+                nextButton: "Próximo",
+                saveBookmark: "Salvar Marcador",
+                optionsButton: "Opções",
+                exitButton: "Sair",
+                readingOptions: "Opções de Leitura",
+                fontLabel: "Fonte do Texto",
+                fontSizeLabel: "Tamanho da Fonte",
+                bgType: "Tipo de Fundo",
+                typing: "Digitação",
+                sound: "Som",
+                closeButton: "Fechar",
+                helpTitle: "Guia Rápido",
+                helpContent: `<div><h3 class="font-semibold text-lg text-white mb-2">1. Começar a Ler</h3><p>Pode <strong>colar</strong> o seu texto diretamente na caixa de texto ou carregar um ficheiro de texto local clicando em <strong>"Abrir Ficheiro (.txt)"</strong>.</p></div><div><h3 class="font-semibold text-lg text-white mb-2">2. Formatação do Texto</h3><p>Para enriquecer a sua leitura, pode usar os seguintes códigos de formatação no seu texto:</p><ul class="list-disc list-inside mt-2 space-y-1 pl-4"><li><code># Título do Capítulo</code> - Cria um título grande.</li><li><code>**texto em negrito**</code> - Deixa o texto a <strong>negrito</strong>.</li><li><code>*texto em itálico*</code> - Deixa o texto em <em>itálico</em>.</li></ul></div><div><h3 class="font-semibold text-lg text-white mb-2">3. Comandos Dinâmicos (Visual Novel)</h3><p>Para uma experiência de visual novel, coloque estes comandos em linhas separadas para alterar o fundo durante a leitura automática:</p><ul class="list-disc list-inside mt-2 space-y-1 pl-4"><li><code>[bg:URL_DA_IMAGEM]</code> - Muda a imagem de fundo.</li><li><code>[colorbg:#código_hex]</code> - Muda para uma cor de fundo sólida (ex: <code>[colorbg:#1a202c]</code>).</li></ul></div><div><h3 class="font-semibold text-lg text-white mb-2">4. Guardar o Progresso</h3><p>Cada texto tem o seu próprio marcador. Use <strong>"Salvar Marcador"</strong> durante a leitura. Ao colar ou abrir o mesmo texto novamente, o botão <strong>"Carregar Marcador"</strong> ficará disponível.</p></div><div><h3 class="font-semibold text-lg text-white mb-2">5. Personalização</h3><p>Pode ajustar várias opções antes de começar ou durante a leitura através do botão <strong>"Opções"</strong>, como velocidade, som da digitação, fontes e cores.</p></div>`
+            },
+            'en': {
+                pageTitle: "Visual Novel Style Reader",
+                title: "Visual Novel Style Reader",
+                subtitle: "Paste your text below. Use # for titles, **bold**, *italics*, and commands like [bg:URL] or [colorbg:#code].",
+                placeholder: "# Chapter 1\n[bg:https://.../image.jpg]\nThe knight arrived...\n[colorbg:#1a202c]\nSuddenly, night fell.",
+                bgSetup: "Background Setup",
+                bgImage: "Image",
+                bgColor: "Solid Color",
+                imageUrl: "Image URL",
+                bgColorLabel: "Background Color",
+                speedLabel: "Speed (wpm)",
+                typingSpeedLabel: "Typing (cps)",
+                soundVolumeLabel: "Sound Volume",
+                fontColorLabel: "Font Color",
+                typewriterEffect: "Typewriter Effect",
+                typingSound: "Typing Sound",
+                openFile: "Open File (.txt)",
+                startReading: "Start Reading",
+                loadBookmark: "Load Bookmark",
+                prevButton: "Previous",
+                pauseButton: "Pause",
+                continueButton: "Continue",
+                nextButton: "Next",
+                saveBookmark: "Save Bookmark",
+                optionsButton: "Options",
+                exitButton: "Exit",
+                readingOptions: "Reading Options",
+                fontLabel: "Text Font",
+                fontSizeLabel: "Font Size",
+                bgType: "Background Type",
+                typing: "Typing",
+                sound: "Sound",
+                closeButton: "Close",
+                helpTitle: "Quick Guide",
+                helpContent: `<div><h3 class="font-semibold text-lg text-white mb-2">1. Start Reading</h3><p>You can <strong>paste</strong> your text directly into the text box or load a local text file by clicking on <strong>"Open File (.txt)"</strong>.</p></div><div><h3 class="font-semibold text-lg text-white mb-2">2. Text Formatting</h3><p>To enrich your reading, you can use the following formatting codes in your text:</p><ul class="list-disc list-inside mt-2 space-y-1 pl-4"><li><code># Chapter Title</code> - Creates a large title.</li><li><code>**bold text**</code> - Makes the text <strong>bold</strong>.</li><li><code>*italic text*</code> - Makes the text <em>italic</em>.</li></ul></div><div><h3 class="font-semibold text-lg text-white mb-2">3. Dynamic Commands (Visual Novel)</h3><p>For a visual novel experience, place these commands on separate lines to change the background during automatic playback:</p><ul class="list-disc list-inside mt-2 space-y-1 pl-4"><li><code>[bg:IMAGE_URL]</code> - Changes the background image.</li><li><code>[colorbg:#hex_code]</code> - Changes to a solid background color (e.g., <code>[colorbg:#1a202c]</code>).</li></ul></div><div><h3 class="font-semibold text-lg text-white mb-2">4. Saving Progress</h3><p>Each text has its own bookmark. Use <strong>"Save Bookmark"</strong> while reading. When you paste or open the same text again, the <strong>"Load Bookmark"</strong> button will become available.</p></div><div><h3 class="font-semibold text-lg text-white mb-2">5. Customization</h3><p>You can adjust various options before starting or during reading via the <strong>"Options"</strong> button, such as speed, typing sound, fonts, and colors.</p></div>`
+            },
+            'es': {
+                pageTitle: "Lector Estilo Novela Visual",
+                title: "Lector Estilo Novela Visual",
+                subtitle: "Pega tu texto abajo. Usa # para títulos, **negrita**, *cursiva* y comandos como [bg:URL] o [colorbg:#código].",
+                placeholder: "# Capítulo 1\n[bg:https://.../imagen.jpg]\nEl caballero llegó...\n[colorbg:#1a202c]\nDe repente, cayó la noche.",
+                bgSetup: "Configuración de Fondo",
+                bgImage: "Imagen",
+                bgColor: "Color Sólido",
+                imageUrl: "URL de la Imagen",
+                bgColorLabel: "Color de Fondo",
+                speedLabel: "Velocidad (ppm)",
+                typingSpeedLabel: "Escritura (cps)",
+                soundVolumeLabel: "Volumen del Sonido",
+                fontColorLabel: "Color de Fuente",
+                typewriterEffect: "Efecto Máquina de Escribir",
+                typingSound: "Sonido de Escritura",
+                openFile: "Abrir Archivo (.txt)",
+                startReading: "Iniciar Lectura",
+                loadBookmark: "Cargar Marcador",
+                prevButton: "Anterior",
+                pauseButton: "Pausar",
+                continueButton: "Continuar",
+                nextButton: "Siguiente",
+                saveBookmark: "Guardar Marcador",
+                optionsButton: "Opciones",
+                exitButton: "Salir",
+                readingOptions: "Opciones de Lectura",
+                fontLabel: "Fuente del Texto",
+                fontSizeLabel: "Tamaño de Fuente",
+                bgType: "Tipo de Fondo",
+                typing: "Escritura",
+                sound: "Sonido",
+                closeButton: "Cerrar",
+                helpTitle: "Guía Rápida",
+                helpContent: `<div><h3 class="font-semibold text-lg text-white mb-2">1. Empezar a Leer</h3><p>Puedes <strong>pegar</strong> tu texto directamente en el cuadro de texto o cargar un archivo de texto local haciendo clic en <strong>"Abrir Archivo (.txt)"</strong>.</p></div><div><h3 class="font-semibold text-lg text-white mb-2">2. Formato del Texto</h3><p>Para enriquecer tu lectura, puedes usar los siguientes códigos de formato en tu texto:</p><ul class="list-disc list-inside mt-2 space-y-1 pl-4"><li><code># Título del Capítulo</code> - Crea un título grande.</li><li><code>**texto en negrita**</code> - Pone el texto en <strong>negrita</strong>.</li><li><code>*texto en cursiva*</code> - Pone el texto en <em>cursiva</em>.</li></ul></div><div><h3 class="font-semibold text-lg text-white mb-2">3. Comandos Dinámicos (Novela Visual)</h3><p>Para una experiencia de novela visual, coloca estos comandos en líneas separadas para cambiar el fondo durante la lectura automática:</p><ul class="list-disc list-inside mt-2 space-y-1 pl-4"><li><code>[bg:URL_DE_LA_IMAGEN]</code> - Cambia la imagen de fondo.</li><li><code>[colorbg:#código_hex]</code> - Cambia a un color de fondo sólido (ej: <code>[colorbg:#1a202c]</code>).</li></ul></div><div><h3 class="font-semibold text-lg text-white mb-2">4. Guardar Progreso</h3><p>Cada texto tiene su propio marcador. Usa <strong>"Guardar Marcador"</strong> mientras lees. Al pegar o abrir el mismo texto de nuevo, el botón <strong>"Cargar Marcador"</strong> estará disponible.</p></div><div><h3 class="font-semibold text-lg text-white mb-2">5. Personalización</h3><p>Puedes ajustar varias opciones antes de empezar o durante la lectura a través del botón <strong>"Opciones"</strong>, como la velocidad, el sonido de escritura, las fuentes y los colores.</p></div>`
+            },
+            'hi': {
+                pageTitle: "विज़ुअल नॉवेल स्टाइल रीडर",
+                title: "विज़ुअल नॉवेल स्टाइल रीडर",
+                subtitle: "अपना टेक्स्ट नीचे पेस्ट करें। शीर्षकों के लिए #, **बोल्ड** के लिए **, *इटैलिक* के लिए * और [bg:URL] या [colorbg:#code] जैसे कमांड का उपयोग करें।",
+                placeholder: "# अध्याय 1\n[bg:https://.../image.jpg]\nशूरवीर आया...\n[colorbg:#1a202c]\nअचानक, रात हो गई।",
+                bgSetup: "पृष्ठभूमि सेटअप",
+                bgImage: "छवि",
+                bgColor: "ठोस रंग",
+                imageUrl: "छवि URL",
+                bgColorLabel: "पृष्ठभूमि का रंग",
+                speedLabel: "गति (wpm)",
+                typingSpeedLabel: "टाइपिंग (cps)",
+                soundVolumeLabel: "ध्वनि की मात्रा",
+                fontColorLabel: "फ़ॉन्ट का रंग",
+                typewriterEffect: "टाइपराइटर प्रभाव",
+                typingSound: "टाइपिंग ध्वनि",
+                openFile: "फ़ाइल खोलें (.txt)",
+                startReading: "पढ़ना शुरू करें",
+                loadBookmark: "बुकमार्क लोड करें",
+                prevButton: "पिछला",
+                pauseButton: "रोकें",
+                continueButton: "जारी रखें",
+                nextButton: "अगला",
+                saveBookmark: "बुकमार्क सहेजें",
+                optionsButton: "विकल्प",
+                exitButton: "बाहर निकलें",
+                readingOptions: "पढ़ने के विकल्प",
+                fontLabel: "टेक्स्ट फ़ॉन्ट",
+                fontSizeLabel: "फ़ॉन्ट आकार",
+                bgType: "पृष्ठभूमि का प्रकार",
+                typing: "टाइपिंग",
+                sound: "ध्वनि",
+                closeButton: "बंद करें",
+                helpTitle: "त्वरित गाइड",
+                helpContent: `<div><h3 class="font-semibold text-lg text-white mb-2">1. पढ़ना शुरू करें</h3><p>आप अपना टेक्स्ट सीधे टेक्स्ट बॉक्स में <strong>पेस्ट</strong> कर सकते हैं या <strong>"फ़ाइल खोलें (.txt)"</strong> पर क्लिक करके एक स्थानीय टेक्स्ट फ़ाइल लोड कर सकते हैं।</p></div><div><h3 class="font-semibold text-lg text-white mb-2">2. टेक्स्ट फॉर्मेटिंग</h3><p>अपने पढ़ने को समृद्ध करने के लिए, आप अपने टेक्स्ट में निम्नलिखित फॉर्मेटिंग कोड का उपयोग कर सकते हैं:</p><ul class="list-disc list-inside mt-2 space-y-1 pl-4"><li><code># अध्याय का शीर्षक</code> - एक बड़ा शीर्षक बनाता है।</li><li><code>**बोल्ड टेक्स्ट**</code> - टेक्स्ट को <strong>बोल्ड</strong> बनाता है।</li><li><code>*इटैलिक टेक्स्ट*</code> - टेक्स्ट को <em>इटैलिक</em> बनाता है।</li></ul></div><div><h3 class="font-semibold text-lg text-white mb-2">3. डायनामिक कमांड (विज़ुअल नॉवेल)</h3><p>एक विज़ुअल नॉवेल अनुभव के लिए, स्वचालित प्लेबैक के दौरान पृष्ठभूमि बदलने के लिए इन कमांड को अलग-अलग लाइनों पर रखें:</p><ul class="list-disc list-inside mt-2 space-y-1 pl-4"><li><code>[bg:IMAGE_URL]</code> - पृष्ठभूमि छवि बदलता है।</li><li><code>[colorbg:#hex_code]</code> - एक ठोस पृष्ठभूमि रंग में बदलता है (उदा., <code>[colorbg:#1a202c]</code>)।</li></ul></div><div><h3 class="font-semibold text-lg text-white mb-2">4. प्रगति सहेजना</h3><p>प्रत्येक टेक्स्ट का अपना बुकमार्क होता है। पढ़ते समय <strong>"बुकमार्क सहेजें"</strong> का उपयोग करें। जब आप उसी टेक्स्ट को फिर से पेस्ट करते हैं या खोलते हैं, तो <strong>"बुकमार्क लोड करें"</strong> बटन उपलब्ध हो जाएगा।</p></div><div><h3 class="font-semibold text-lg text-white mb-2">5. अनुकूलन</h3><p>आप <strong>"विकल्प"</strong> बटन के माध्यम से शुरू करने से पहले या पढ़ते समय विभिन्न विकल्पों को समायोजित कर सकते हैं, जैसे कि गति, टाइपिंग ध्वनि, फ़ॉन्ट और रंग।</p></div>`
+            },
+            'ja': {
+                pageTitle: "ビジュアルノベル風リーダー",
+                title: "ビジュアルノベル風リーダー",
+                subtitle: "以下にテキストを貼り付けてください。見出しには#、**太字**には**、*斜体*には*、コマンド（[bg:URL]や[colorbg:#code]など）を使用してください。",
+                placeholder: "# 第一章\n[bg:https://.../image.jpg]\n騎士が到着した...\n[colorbg:#1a202c]\n突然、夜が訪れた。",
+                bgSetup: "背景設定",
+                bgImage: "画像",
+                bgColor: "単色",
+                imageUrl: "画像URL",
+                bgColorLabel: "背景色",
+                speedLabel: "速度 (wpm)",
+                typingSpeedLabel: "タイピング (cps)",
+                soundVolumeLabel: "音量",
+                fontColorLabel: "フォントの色",
+                typewriterEffect: "タイプライター効果",
+                typingSound: "タイピング音",
+                openFile: "ファイルを開く (.txt)",
+                startReading: "読書開始",
+                loadBookmark: "ブックマークを読み込む",
+                prevButton: "前へ",
+                pauseButton: "一時停止",
+                continueButton: "続ける",
+                nextButton: "次へ",
+                saveBookmark: "ブックマークを保存",
+                optionsButton: "オプション",
+                exitButton: "終了",
+                readingOptions: "読書オプション",
+                fontLabel: "テキストフォント",
+                fontSizeLabel: "フォントサイズ",
+                bgType: "背景タイプ",
+                typing: "タイピング",
+                sound: "サウンド",
+                closeButton: "閉じる",
+                helpTitle: "クイックガイド",
+                helpContent: `<div><h3 class="font-semibold text-lg text-white mb-2">1. 読書を開始する</h3><p>テキストボックスに直接テキストを<strong>貼り付ける</strong>か、<strong>「ファイルを開く (.txt)」</strong>をクリックしてローカルのテキストファイルを読み込むことができます。</p></div><div><h3 class="font-semibold text-lg text-white mb-2">2. テキストの書式設定</h3><p>読書体験を豊かにするために、テキストに以下の書式コードを使用できます：</p><ul class="list-disc list-inside mt-2 space-y-1 pl-4"><li><code># 章のタイトル</code> - 大きな見出しを作成します。</li><li><code>**太字のテキスト**</code> - テキストを<strong>太字</strong>にします。</li><li><code>*斜体のテキスト*</code> - テキストを<em>斜体</em>にします。</li></ul></div><div><h3 class="font-semibold text-lg text-white mb-2">3. 動的コマンド（ビジュアルノベル）</h3><p>ビジュアルノベルのような体験のために、自動再生中に背景を変更するには、これらのコマンドを別々の行に配置します：</p><ul class="list-disc list-inside mt-2 space-y-1 pl-4"><li><code>[bg:IMAGE_URL]</code> - 背景画像を変更します。</li><li><code>[colorbg:#hex_code]</code> - 単色の背景色に変更します（例：<code>[colorbg:#1a202c]</code>）。</li></ul></div><div><h3 class="font-semibold text-lg text-white mb-2">4. 進捗の保存</h3><p>各テキストには独自のブックマークがあります。読書中に<strong>「ブックマークを保存」</strong>を使用してください。同じテキストを再度貼り付けたり開いたりすると、<strong>「ブックマークを読み込む」</strong>ボタンが利用可能になります。</p></div><div><h3 class="font-semibold text-lg text-white mb-2">5. カスタマイズ</h3><p><strong>「オプション」</strong>ボタンから、読書を開始する前または読書中に、速度、タイピング音、フォント、色など、さまざまなオプションを調整できます。</p></div>`
+            },
+            'zh-CN': {
+                pageTitle: "视觉小说风格阅读器",
+                title: "视觉小说风格阅读器",
+                subtitle: "在下方粘贴您的文本。使用 # 表示标题，**粗体**，*斜体*，以及像 [bg:URL] 或 [colorbg:#code] 这样的命令。",
+                placeholder: "# 第一章\n[bg:https://.../image.jpg]\n骑士到达了...\n[colorbg:#1a202c]\n突然，夜幕降临。",
+                bgSetup: "背景设置",
+                bgImage: "图片",
+                bgColor: "纯色",
+                imageUrl: "图片URL",
+                bgColorLabel: "背景颜色",
+                speedLabel: "速度 (wpm)",
+                typingSpeedLabel: "打字 (cps)",
+                soundVolumeLabel: "音量",
+                fontColorLabel: "字体颜色",
+                typewriterEffect: "打字机效果",
+                typingSound: "打字声音",
+                openFile: "打开文件 (.txt)",
+                startReading: "开始阅读",
+                loadBookmark: "加载书签",
+                prevButton: "上一个",
+                pauseButton: "暂停",
+                continueButton: "继续",
+                nextButton: "下一个",
+                saveBookmark: "保存书签",
+                optionsButton: "选项",
+                exitButton: "退出",
+                readingOptions: "阅读选项",
+                fontLabel: "文本字体",
+                fontSizeLabel: "字体大小",
+                bgType: "背景类型",
+                typing: "打字",
+                sound: "声音",
+                closeButton: "关闭",
+                helpTitle: "快速指南",
+                helpContent: `<div><h3 class="font-semibold text-lg text-white mb-2">1. 开始阅读</h3><p>您可以将文本直接<strong>粘贴</strong>到文本框中，或通过单击<strong>“打开文件 (.txt)”</strong>加载本地文本文件。</p></div><div><h3 class="font-semibold text-lg text-white mb-2">2. 文本格式</h3><p>为了丰富您的阅读体验，您可以在文本中使用以下格式代码：</p><ul class="list-disc list-inside mt-2 space-y-1 pl-4"><li><code># 章节标题</code> - 创建一个大标题。</li><li><code>**粗体文本**</code> - 使文本变为<strong>粗体</strong>。</li><li><code>*斜体文本*</code> - 使文本变为<em>斜体</em>。</li></ul></div><div><h3 class="font-semibold text-lg text-white mb-2">3. 动态命令（视觉小说）</h3><p>为了获得视觉小说体验，请将这些命令放在单独的行上，以便在自动播放期间更改背景：</p><ul class="list-disc list-inside mt-2 space-y-1 pl-4"><li><code>[bg:IMAGE_URL]</code> - 更改背景图片。</li><li><code>[colorbg:#hex_code]</code> - 更改为纯色背景（例如：<code>[colorbg:#1a202c]</code>）。</li></ul></div><div><h3 class="font-semibold text-lg text-white mb-2">4. 保存进度</h3><p>每个文本都有自己的书签。在阅读时使用<strong>“保存书签”</strong>。当您再次粘贴或打开相同的文本时，<strong>“加载书签”</strong>按钮将变为可用。</p></div><div><h3 class="font-semibold text-lg text-white mb-2">5. 自定义</h3><p>您可以在开始阅读前或阅读期间通过<strong>“选项”</strong>按钮调整各种设置，例如速度、打字声音、字体和颜色。</p></div>`
+            },
+            'ko': {
+                pageTitle: "비주얼 노벨 스타일 리더",
+                title: "비주얼 노벨 스타일 리더",
+                subtitle: "아래에 텍스트를 붙여넣으세요. 제목에는 #, **굵게**는 **, *기울임꼴*은 *, [bg:URL] 또는 [colorbg:#code]와 같은 명령을 사용하세요.",
+                placeholder: "# 제1장\n[bg:https://.../image.jpg]\n기사가 도착했다...\n[colorbg:#1a202c]\n갑자기 밤이 되었다.",
+                bgSetup: "배경 설정",
+                bgImage: "이미지",
+                bgColor: "단색",
+                imageUrl: "이미지 URL",
+                bgColorLabel: "배경색",
+                speedLabel: "속도 (wpm)",
+                typingSpeedLabel: "타이핑 (cps)",
+                soundVolumeLabel: "소리 볼륨",
+                fontColorLabel: "글꼴 색상",
+                typewriterEffect: "타자기 효과",
+                typingSound: "타이핑 소리",
+                openFile: "파일 열기 (.txt)",
+                startReading: "읽기 시작",
+                loadBookmark: "북마크 불러오기",
+                prevButton: "이전",
+                pauseButton: "일시정지",
+                continueButton: "계속",
+                nextButton: "다음",
+                saveBookmark: "북마크 저장",
+                optionsButton: "옵션",
+                exitButton: "나가기",
+                readingOptions: "읽기 옵션",
+                fontLabel: "텍스트 글꼴",
+                fontSizeLabel: "글꼴 크기",
+                bgType: "배경 유형",
+                typing: "타이핑",
+                sound: "소리",
+                closeButton: "닫기",
+                helpTitle: "빠른 안내",
+                helpContent: `<div><h3 class="font-semibold text-lg text-white mb-2">1. 읽기 시작하기</h3><p>텍스트 상자에 직접 텍스트를 <strong>붙여넣기</strong>하거나 <strong>"파일 열기 (.txt)"</strong>를 클릭하여 로컬 텍스트 파일을 로드할 수 있습니다.</p></div><div><h3 class="font-semibold text-lg text-white mb-2">2. 텍스트 서식 지정</h3><p>독서 경험을 풍부하게 하려면 텍스트에 다음 서식 코드를 사용할 수 있습니다:</p><ul class="list-disc list-inside mt-2 space-y-1 pl-4"><li><code># 챕터 제목</code> - 큰 제목을 만듭니다.</li><li><code>**굵은 텍스트**</code> - 텍스트를 <strong>굵게</strong> 만듭니다.</li><li><code>*기울임꼴 텍스트*</code> - 텍스트를 <em>기울임꼴</em>로 만듭니다.</li></ul></div><div><h3 class="font-semibold text-lg text-white mb-2">3. 동적 명령어 (비주얼 노벨)</h3><p>비주얼 노벨 경험을 위해 자동 재생 중에 배경을 변경하려면 이러한 명령을 별도의 줄에 배치하십시오:</p><ul class="list-disc list-inside mt-2 space-y-1 pl-4"><li><code>[bg:IMAGE_URL]</code> - 배경 이미지를 변경합니다.</li><li><code>[colorbg:#hex_code]</code> - 단색 배경으로 변경합니다 (예: <code>[colorbg:#1a202c]</code>).</li></ul></div><div><h3 class="font-semibold text-lg text-white mb-2">4. 진행 상황 저장</h3><p>각 텍스트에는 자체 북마크가 있습니다. 읽는 동안 <strong>"북마크 저장"</strong>을 사용하십시오. 동일한 텍스트를 다시 붙여넣거나 열면 <strong>"북마크 불러오기"</strong> 버튼을 사용할 수 있게 됩니다.</p></div><div><h3 class="font-semibold text-lg text-white mb-2">5. 사용자 정의</h3><p><strong>"옵션"</strong> 버튼을 통해 읽기를 시작하기 전이나 읽는 동안 속도, 타이핑 소리, 글꼴, 색상 등 다양한 옵션을 조정할 수 있습니다.</p></div>`
+            }
+        };
+
+        const messageStrings = {
+            'pt-BR': {
+                insertText: "Por favor, insira um texto para ler.",
+                readingComplete: "Leitura concluída!",
+                progressSaved: "Progresso salvo!",
+                bookmarkLoaded: "Marcador carregado. A iniciar a leitura...",
+                noBookmark: "Nenhum marcador encontrado para este texto.",
+                fileLoaded: "Ficheiro carregado com sucesso!",
+                fileError: "Erro ao ler o ficheiro."
+            },
+            'en': {
+                insertText: "Please insert a text to read.",
+                readingComplete: "Reading complete!",
+                progressSaved: "Progress saved!",
+                bookmarkLoaded: "Bookmark loaded. Starting reading...",
+                noBookmark: "No bookmark found for this text.",
+                fileLoaded: "File loaded successfully!",
+                fileError: "Error reading the file."
+            },
+            'es': {
+                insertText: "Por favor, introduce un texto para leer.",
+                readingComplete: "¡Lectura completada!",
+                progressSaved: "¡Progreso guardado!",
+                bookmarkLoaded: "Marcador cargado. Iniciando lectura...",
+                noBookmark: "No se encontró ningún marcador para este texto.",
+                fileLoaded: "¡Archivo cargado con éxito!",
+                fileError: "Error al leer el archivo."
+            },
+            'hi': {
+                insertText: "कृपया पढ़ने के लिए एक टेक्स्ट डालें।",
+                readingComplete: "पढ़ना पूरा हुआ!",
+                progressSaved: "प्रगति सहेजी गई!",
+                bookmarkLoaded: "बुकमार्क लोड हो गया। पढ़ना शुरू हो रहा है...",
+                noBookmark: "इस टेक्स्ट के लिए कोई बुकमार्क नहीं मिला।",
+                fileLoaded: "फ़ाइल सफलतापूर्वक लोड हो गई!",
+                fileError: "फ़ाइल पढ़ने में त्रुटि।"
+            },
+            'ja': {
+                insertText: "読むテキストを挿入してください。",
+                readingComplete: "読了しました！",
+                progressSaved: "進捗を保存しました！",
+                bookmarkLoaded: "ブックマークを読み込みました。読書を開始します...",
+                noBookmark: "このテキストのブックマークは見つかりませんでした。",
+                fileLoaded: "ファイルが正常に読み込まれました！",
+                fileError: "ファイルの読み込み中にエラーが発生しました。"
+            },
+            'zh-CN': {
+                insertText: "请输入要阅读的文本。",
+                readingComplete: "阅读完成！",
+                progressSaved: "进度已保存！",
+                bookmarkLoaded: "书签已加载。开始阅读...",
+                noBookmark: "未找到此文本的书签。",
+                fileLoaded: "文件加载成功！",
+                fileError: "读取文件时出错。"
+            },
+            'ko': {
+                insertText: "읽을 텍스트를 입력하세요.",
+                readingComplete: "읽기 완료!",
+                progressSaved: "진행 상황이 저장되었습니다!",
+                bookmarkLoaded: "북마크를 불러왔습니다. 읽기를 시작합니다...",
+                noBookmark: "이 텍스트에 대한 북마크를 찾을 수 없습니다.",
+                fileLoaded: "파일을 성공적으로 불러왔습니다!",
+                fileError: "파일을 읽는 중 오류가 발생했습니다."
+            }
+        };
+
+        // Elementos da UI
+        const setupScreen = document.getElementById('setupScreen');
+        const readingScreen = document.getElementById('readingScreen');
+        const startButton = document.getElementById('startButton');
+        const resetButton = document.getElementById('resetButton');
+        const textInput = document.getElementById('textInput');
+        const textDisplay = document.getElementById('textDisplay');
+        const speedSlider = document.getElementById('speedSlider');
+        const speedValue = document.getElementById('speedValue');
+        const speedSliderContainer = document.getElementById('speedSliderContainer');
+        const typingSpeedSlider = document.getElementById('typingSpeedSlider');
+        const typingSpeedValue = document.getElementById('typingSpeedValue');
+        const bgImageUrlInput = document.getElementById('bgImageUrlInput');
+        const body = document.body;
+        const prevButton = document.getElementById('prevButton');
+        const nextButton = document.getElementById('nextButton');
+        const continueButton = document.getElementById('continueButton');
+        const typewriterToggle = document.getElementById('typewriterToggle');
+        const messageArea = document.getElementById('messageArea');
+        const messageAreaReading = document.getElementById('messageAreaReading');
+        const saveBookmarkButtonReading = document.getElementById('saveBookmarkButtonReading');
+        const loadBookmarkButton = document.getElementById('loadBookmarkButton');
+        const settingsButton = document.getElementById('settingsButton');
+        const settingsModal = document.getElementById('settingsModal');
+        const closeSettingsButton = document.getElementById('closeSettingsButton');
+        const speedSliderModal = document.getElementById('speedSliderModal');
+        const speedValueModal = document.getElementById('speedValueModal');
+        const speedSliderModalContainer = document.getElementById('speedSliderModalContainer');
+        const typingSpeedSliderModal = document.getElementById('typingSpeedSliderModal');
+        const typingSpeedValueModal = document.getElementById('typingSpeedValueModal');
+        const fontFamilySelect = document.getElementById('fontFamilySelect');
+        const fontSizeSlider = document.getElementById('fontSizeSlider');
+        const fontSizeValue = document.getElementById('fontSizeValue');
+        const typewriterToggleModal = document.getElementById('typewriterToggleModal');
+        const soundToggle = document.getElementById('soundToggle');
+        const volumeSlider = document.getElementById('volumeSlider');
+        const volumeValue = document.getElementById('volumeValue');
+        const soundToggleModal = document.getElementById('soundToggleModal');
+        const volumeSliderModal = document.getElementById('volumeSliderModal');
+        const volumeValueModal = document.getElementById('volumeValueModal');
+        const fontColorInput = document.getElementById('fontColorInput');
+        const fontColorInputModal = document.getElementById('fontColorInputModal');
+        const bgColorInput = document.getElementById('bgColorInput');
+        const bgColorInputModal = document.getElementById('bgColorInputModal');
+        const bgTypeImage = document.getElementById('bgTypeImage');
+        const bgTypeColor = document.getElementById('bgTypeColor');
+        const bgTypeImageModal = document.getElementById('bgTypeImageModal');
+        const bgTypeColorModal = document.getElementById('bgTypeColorModal');
+        const bgImageUrlContainer = document.getElementById('bgImageUrlContainer');
+        const bgColorContainer = document.getElementById('bgColorContainer');
+        const bgColorContainerModal = document.getElementById('bgColorContainerModal');
+        const openFileButton = document.getElementById('openFileButton');
+        const fileInput = document.getElementById('fileInput');
+        const helpButton = document.getElementById('helpButton');
+        const helpModal = document.getElementById('helpModal');
+        const closeHelpButton = document.getElementById('closeHelpButton');
+        const languageSelector = document.getElementById('languageSelector');
+
+
+        // Variáveis de estado
+        let sentences = [];
+        let currentIndex = 0;
+        let readingTimer;
+        let isPaused = false;
+        let isTypewriterActive = true;
+        let animationFrameId;
+        let isSoundActive = true;
+        let soundVolume = 0.5;
+        let backgroundType = 'image';
+        let currentLanguage = 'pt-BR';
+
+        // Audio API
+        let audioCtx;
+        let gainNode;
+        
+        const BOOKMARK_PREFIX = 'visualNovelReader_';
+        
+        // --- Lógica de Áudio ---
+        function initAudio() {
+            if (!audioCtx) {
+                try {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    gainNode = audioCtx.createGain();
+                    gainNode.gain.value = soundVolume;
+                    gainNode.connect(audioCtx.destination);
+                } catch (e) {
+                    console.error("Web Audio API is not supported in this browser");
+                    soundToggle.disabled = true;
+                    soundToggleModal.disabled = true;
+                }
+            }
+        }
+
+        function playTypingSound() {
+            if (!audioCtx || !isSoundActive || !isTypewriterActive) return;
+
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            
+            const now = audioCtx.currentTime;
+            const clickOscillator = audioCtx.createOscillator();
+            const clickGain = audioCtx.createGain();
+            clickOscillator.type = 'sine';
+            clickOscillator.frequency.setValueAtTime(1200, now);
+            clickGain.gain.setValueAtTime(soundVolume, now);
+            clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+            clickOscillator.connect(clickGain);
+            clickGain.connect(gainNode);
+            clickOscillator.start(now);
+            clickOscillator.stop(now + 0.05);
+
+            const noiseOscillator = audioCtx.createOscillator();
+            const noiseGain = audioCtx.createGain();
+            noiseOscillator.type = 'square';
+            noiseOscillator.frequency.setValueAtTime(150, now);
+            noiseGain.gain.setValueAtTime(soundVolume * 0.4, now);
+            noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+            noiseOscillator.connect(noiseGain);
+            noiseGain.connect(gainNode);
+            noiseOscillator.start(now);
+            noiseOscillator.stop(now + 0.1);
+        }
+
+        // --- Funções Auxiliares de Tradução ---
+        function applyTranslations(lang) {
+            const langStrings = translations[lang];
+            if (!langStrings) return;
+            
+            document.documentElement.lang = lang;
+
+            document.querySelectorAll('[data-translate]').forEach(element => {
+                const key = element.getAttribute('data-translate');
+                if (langStrings[key]) {
+                    if (element.tagName === 'TEXTAREA' && element.placeholder) {
+                        element.placeholder = langStrings[key];
+                    } else if (element.tagName === 'TITLE') {
+                        element.textContent = langStrings[key];
+                    }
+                    else {
+                        element.innerHTML = langStrings[key];
+                    }
+                }
+            });
+        }
+        
+        function setLanguage(lang) {
+            if (translations[lang]) {
+                currentLanguage = lang;
+                localStorage.setItem('visualNovelReaderLanguage', lang);
+                applyTranslations(lang);
+                languageSelector.value = lang;
+            }
+        }
+
+
+        function showMessage(messageKey, duration = 3000) {
+            const msg = messageStrings[currentLanguage][messageKey] || messageKey;
+            const targetMessageArea = readingScreen.classList.contains('hidden') ? messageArea : messageAreaReading;
+            targetMessageArea.textContent = msg;
+            setTimeout(() => { targetMessageArea.textContent = '' }, duration);
+        }
+
+        function parseAndRender(index) {
+            if (index < 0 || index >= sentences.length) return;
+            
+            const rawSentence = sentences[index].trim();
+            let html = rawSentence;
+            
+            if (html.startsWith('# ')) {
+                html = `<h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-yellow-300 animate-fade-in">${html.substring(2)}</h1>`;
+            } else {
+                html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-orange-300">$1</strong>');
+                html = html.replace(/\*(.*?)\*/g, '<i class="italic text-lime-300">$1</i>');
+            }
+
+            textDisplay.innerHTML = html;
+        }
+
+        // --- Lógica de Leitura ---
+        function startReading(startIndex = 0) {
+            initAudio();
+            const text = textInput.value;
+            if (text.trim() === "") {
+                showMessage("insertText");
+                return;
+            }
+            sentences = text.split(/\n|(?<=[.!?])\s+/).filter(s => s.trim().length > 0);
+            currentIndex = startIndex;
+            isPaused = false;
+            updateBackground();
+            updateFontColor();
+            setupScreen.classList.add('hidden');
+            readingScreen.classList.remove('hidden');
+            continueButton.textContent = translations[currentLanguage].pauseButton;
+            showNextSentence();
+        }
+
+        function calculateDelay() {
+            const wpm = speedSlider.value;
+            const words = (sentences[currentIndex] || "").split(' ').length;
+            const delay = (words / wpm) * 60000;
+            return Math.max(delay, 1000);
+        }
+        
+        function showSentence(index) {
+            if (index >= sentences.length) {
+                resetReading();
+                showMessage("readingComplete");
+                return;
+            }
+            parseAndRender(index);
+        }
+        
+        function typeSentence(index, onComplete) {
+            if (index >= sentences.length) {
+                resetReading();
+                showMessage("readingComplete");
+                return;
+            }
+
+            const rawSentence = sentences[index].trim();
+            const isTitle = rawSentence.startsWith('# ');
+            const cleanSentenceForTyping = rawSentence
+                .replace(/^#\s/, '')
+                .replace(/\*\*(.*?)\*\*/g, '$1')
+                .replace(/\*(.*?)\*/g, '$1');
+
+            let i = 0;
+            textDisplay.innerHTML = '';
+
+            let targetElement = textDisplay;
+
+            if (isTitle) {
+                const titleElement = document.createElement('h1');
+                titleElement.className = "text-4xl md:text-5xl lg:text-6xl font-bold text-yellow-300 animate-fade-in";
+                textDisplay.appendChild(titleElement);
+                targetElement = titleElement;
+            }
+            
+            const cps = typingSpeedSlider.value;
+            const interval = 1000 / cps;
+            let lastTime = performance.now();
+
+            function type(currentTime) {
+                if (i >= cleanSentenceForTyping.length) {
+                    if (!isTitle) {
+                        parseAndRender(index);
+                    }
+                    if (onComplete) onComplete();
+                    return; 
+                }
+                
+                const deltaTime = currentTime - lastTime;
+                
+                if (deltaTime > interval) {
+                    targetElement.textContent += cleanSentenceForTyping.charAt(i);
+                    playTypingSound();
+                    i++;
+                    lastTime = currentTime - (deltaTime % interval);
+                }
+                
+                animationFrameId = requestAnimationFrame(type);
+            }
+            animationFrameId = requestAnimationFrame(type);
+        }
+
+        function displayCurrentSentence(onCompleteCallback) {
+             cancelAnimationFrame(animationFrameId);
+            if (isTypewriterActive) {
+                typeSentence(currentIndex, onCompleteCallback);
+            } else {
+                showSentence(currentIndex);
+                if (onCompleteCallback) onCompleteCallback();
+            }
+        }
+
+        function showNextSentence() {
+            if (currentIndex >= sentences.length) {
+                resetReading();
+                return;
+            }
+            
+            clearTimeout(readingTimer);
+
+            if (isPaused) {
+                return;
+            }
+            
+            const currentLine = sentences[currentIndex].trim();
+            const bgMatch = currentLine.match(/^\[bg:(.*?)\]$/);
+            const colorBgMatch = currentLine.match(/^\[colorbg:(.*?)\]$/);
+
+            if (bgMatch) {
+                const imageUrl = bgMatch[1];
+                try {
+                    new URL(imageUrl);
+                    body.style.backgroundImage = `url('${imageUrl}')`;
+                    body.style.backgroundColor = '';
+                    backgroundType = 'image';
+                    bgImageUrlInput.value = imageUrl;
+                } catch (e) {
+                    console.warn("URL de imagem inválida no texto:", imageUrl);
+                }
+                currentIndex++;
+                requestAnimationFrame(showNextSentence);
+                return;
+            }
+
+            if (colorBgMatch) {
+                const color = colorBgMatch[1];
+                body.style.backgroundImage = 'none';
+                body.style.backgroundColor = color;
+                backgroundType = 'color';
+                bgColorInput.value = color;
+                currentIndex++;
+                requestAnimationFrame(showNextSentence);
+                return;
+            }
+
+            displayCurrentSentence(() => {
+                if (!isPaused) {
+                    const delay = isTypewriterActive ? 2000 : calculateDelay();
+                    readingTimer = setTimeout(() => {
+                        currentIndex++;
+                        showNextSentence();
+                    }, delay);
+                }
+            });
+        }
+        
+        function pauseReading() {
+            clearTimeout(readingTimer);
+            isPaused = true;
+            continueButton.textContent = translations[currentLanguage].continueButton;
+        }
+
+        function continueReading() {
+            isPaused = false;
+            continueButton.textContent = translations[currentLanguage].pauseButton;
+            currentIndex++;
+            showNextSentence();
+        }
+        
+        function prevSentence() {
+            pauseReading();
+            currentIndex = Math.max(0, currentIndex - 1);
+            displayCurrentSentence();
+        }
+        
+        function nextSentence() {
+            pauseReading();
+            currentIndex = Math.min(sentences.length - 1, currentIndex + 1);
+            displayCurrentSentence();
+        }
+
+        function resetReading() {
+            clearTimeout(readingTimer);
+            cancelAnimationFrame(animationFrameId);
+            sentences = [];
+            currentIndex = 0;
+            readingScreen.classList.add('hidden');
+            setupScreen.classList.remove('hidden');
+        }
+
+        function updateFontColor() {
+            textDisplay.style.color = fontColorInput.value;
+        }
+
+        function updateBackground() {
+            if (backgroundType === 'image') {
+                const imageUrl = bgImageUrlInput.value.trim();
+                const defaultImageUrl = 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?q=80&w=2728&auto-format&fit=crop';
+                let finalUrl = defaultImageUrl;
+
+                if (imageUrl) {
+                    try {
+                        new URL(imageUrl);
+                        finalUrl = imageUrl;
+                    } catch (_) {
+                        console.warn("URL da imagem de fundo inválida, usando padrão.");
+                    }
+                }
+                body.style.backgroundImage = `url('${finalUrl}')`;
+                body.style.backgroundColor = '';
+            } else {
+                body.style.backgroundImage = 'none';
+                body.style.backgroundColor = bgColorInput.value;
+            }
+        }
+        
+        function updateSpeedControlState() {
+            if (isTypewriterActive) {
+                speedSlider.disabled = true;
+                speedSliderModal.disabled = true;
+                speedSliderContainer.classList.add('opacity-50', 'pointer-events-none');
+                speedSliderModalContainer.classList.add('opacity-50', 'pointer-events-none');
+            } else {
+                speedSlider.disabled = false;
+                speedSliderModal.disabled = false;
+                speedSliderContainer.classList.remove('opacity-50', 'pointer-events-none');
+                speedSliderModalContainer.classList.remove('opacity-50', 'pointer-events-none');
+            }
+        }
+        
+        // --- Funções de Marcador (Bookmark) ---
+
+        function simpleHash(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = (hash << 5) - hash + char;
+                hash |= 0;
+            }
+            return hash;
+        }
+
+        function generateTextKey(text) {
+            const trimmedText = text.trim();
+            if (trimmedText.length === 0) return null;
+            const prefix = trimmedText.substring(0, 500);
+            return `${BOOKMARK_PREFIX}${trimmedText.length}_${simpleHash(prefix)}`;
+        }
+
+        function checkBookmark() {
+            const text = textInput.value;
+            const key = generateTextKey(text);
+
+            if (key && localStorage.getItem(key)) {
+                loadBookmarkButton.disabled = false;
+            } else {
+                loadBookmarkButton.disabled = true;
+            }
+        }
+
+        function saveBookmark() {
+            const text = textInput.value;
+            if (text.trim() === '') {
+                showMessage('noTextToSave');
+                return;
+            }
+            const key = generateTextKey(text);
+            if (!key) return;
+
+            const bookmark = {
+                index: currentIndex > 0 ? currentIndex : 0
+            };
+            localStorage.setItem(key, JSON.stringify(bookmark));
+            showMessage('progressSaved');
+        }
+
+        function loadBookmark() {
+            const text = textInput.value;
+            const key = generateTextKey(text);
+            if (!key) {
+                showMessage('noBookmark');
+                return;
+            }
+
+            const bookmarkJSON = localStorage.getItem(key);
+            if (bookmarkJSON) {
+                const bookmark = JSON.parse(bookmarkJSON);
+                showMessage('bookmarkLoaded');
+                startReading(bookmark.index);
+            } else {
+                showMessage('noBookmark');
+            }
+        }
+
+        function setBackgroundType(type) {
+            backgroundType = type;
+            if (type === 'image') {
+                [bgTypeImage, bgTypeImageModal].forEach(el => el.classList.replace('bg-gray-700', 'bg-blue-600'));
+                [bgTypeColor, bgTypeColorModal].forEach(el => el.classList.replace('bg-blue-600', 'bg-gray-700'));
+                bgImageUrlContainer.classList.remove('hidden');
+                bgColorContainer.classList.add('hidden');
+            } else {
+                [bgTypeColor, bgTypeColorModal].forEach(el => el.classList.replace('bg-gray-700', 'bg-blue-600'));
+                [bgTypeImage, bgTypeImageModal].forEach(el => el.classList.replace('bg-blue-600', 'bg-gray-700'));
+                bgImageUrlContainer.classList.add('hidden');
+                bgColorContainer.classList.remove('hidden');
+            }
+            updateBackground();
+        }
+
+        // --- Sincronização de Controles ---
+        function syncControls() {
+            speedSliderModal.value = speedSlider.value;
+            speedValueModal.textContent = speedSlider.value;
+            typingSpeedSliderModal.value = typingSpeedSlider.value;
+            typingSpeedValueModal.textContent = typingSpeedSlider.value;
+            typewriterToggleModal.checked = typewriterToggle.checked;
+            soundToggleModal.checked = soundToggle.checked;
+            volumeSliderModal.value = volumeSlider.value;
+            volumeValueModal.textContent = `${volumeSlider.value}%`;
+            fontColorInputModal.value = fontColorInput.value;
+            bgColorInputModal.value = bgColorInput.value;
+        }
+
+        // --- Event Listeners ---
+        startButton.onclick = () => startReading(0);
+        resetButton.addEventListener('click', resetReading);
+        speedSlider.addEventListener('input', (e) => { speedValue.textContent = e.target.value; });
+        typingSpeedSlider.addEventListener('input', (e) => { typingSpeedValue.textContent = e.target.value; });
+        bgImageUrlInput.addEventListener('change', updateBackground);
+        prevButton.addEventListener('click', prevSentence);
+        nextButton.addEventListener('click', nextSentence);
+        continueButton.addEventListener('click', () => { isPaused ? continueReading() : pauseReading(); });
+        typewriterToggle.addEventListener('change', (e) => {
+            isTypewriterActive = e.target.checked;
+            typewriterToggleModal.checked = isTypewriterActive;
+            updateSpeedControlState();
+        });
+        textInput.addEventListener('input', checkBookmark);
+        saveBookmarkButtonReading.addEventListener('click', saveBookmark);
+        loadBookmarkButton.addEventListener('click', loadBookmark);
+        soundToggle.addEventListener('change', (e) => {
+            isSoundActive = e.target.checked;
+            soundToggleModal.checked = isSoundActive;
+        });
+        volumeSlider.addEventListener('input', (e) => {
+            const volume = e.target.value / 100;
+            soundVolume = volume;
+            if (gainNode) gainNode.gain.value = soundVolume;
+            volumeValue.textContent = `${e.target.value}%`;
+            volumeSliderModal.value = e.target.value;
+            volumeValueModal.textContent = `${e.target.value}%`;
+        });
+        fontColorInput.addEventListener('input', (e) => {
+            fontColorInputModal.value = e.target.value;
+            updateFontColor();
+        });
+        bgColorInput.addEventListener('input', (e) => {
+            bgColorInputModal.value = e.target.value;
+            if (backgroundType === 'color') updateBackground();
+        });
+        bgTypeImage.addEventListener('click', () => setBackgroundType('image'));
+        bgTypeColor.addEventListener('click', () => setBackgroundType('color'));
+        
+        openFileButton.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) {
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const content = e.target.result;
+                textInput.value = content;
+                textInput.dispatchEvent(new Event('input', { bubbles: true }));
+                showMessage('fileLoaded');
+            };
+            reader.onerror = () => {
+                showMessage('fileError');
+            };
+            reader.readAsText(file);
+            
+            event.target.value = ''; 
+        });
+
+        // Listeners do Modal de Ajuda
+        helpButton.addEventListener('click', () => { helpModal.classList.remove('hidden'); });
+        closeHelpButton.addEventListener('click', () => { helpModal.classList.add('hidden'); });
+        
+        // Listeners de Idioma
+        languageSelector.addEventListener('change', (e) => setLanguage(e.target.value));
+
+        // Listeners do Modal de Opções
+        settingsButton.addEventListener('click', () => { syncControls(); settingsModal.classList.remove('hidden'); });
+        closeSettingsButton.addEventListener('click', () => settingsModal.classList.add('hidden'));
+        speedSliderModal.addEventListener('input', (e) => { speedValueModal.textContent = e.target.value; speedSlider.value = e.target.value; speedValue.textContent = e.target.value; });
+        typingSpeedSliderModal.addEventListener('input', (e) => { typingSpeedValueModal.textContent = e.target.value; typingSpeedSlider.value = e.target.value; typingSpeedValue.textContent = e.target.value; });
+        fontFamilySelect.addEventListener('change', (e) => { textDisplay.style.fontFamily = `'${e.target.value}', sans-serif`; });
+        fontSizeSlider.addEventListener('input', (e) => {
+            const size = e.target.value;
+            fontSizeValue.textContent = `${size}%`;
+            const baseSize = window.innerWidth < 768 ? 1.25 : 1.5;
+            textDisplay.style.fontSize = `${baseSize * (size / 100)}rem`;
+        });
+        typewriterToggleModal.addEventListener('change', (e) => { isTypewriterActive = e.target.checked; typewriterToggle.checked = isTypewriterActive; updateSpeedControlState(); });
+        soundToggleModal.addEventListener('change', (e) => { isSoundActive = e.target.checked; soundToggle.checked = isSoundActive; });
+        volumeSliderModal.addEventListener('input', (e) => {
+            const volume = e.target.value / 100;
+            soundVolume = volume;
+            if (gainNode) gainNode.gain.value = soundVolume;
+            volumeValueModal.textContent = `${e.target.value}%`;
+            volumeSlider.value = e.target.value;
+            volumeValue.textContent = `${e.target.value}%`;
+        });
+        fontColorInputModal.addEventListener('input', (e) => {
+            fontColorInput.value = e.target.value;
+            updateFontColor();
+        });
+        bgColorInputModal.addEventListener('input', (e) => {
+            bgColorInput.value = e.target.value;
+            if (backgroundType === 'color') updateBackground();
+        });
+        bgTypeImageModal.addEventListener('click', () => setBackgroundType('image'));
+        bgTypeColorModal.addEventListener('click', () => setBackgroundType('color'));
+
+        // Ajustar o tamanho da fonte no redimensionamento da janela
+        window.addEventListener('resize', () => {
+            const size = fontSizeSlider.value;
+            const baseSize = window.innerWidth < 768 ? 1.25 : 1.5;
+            textDisplay.style.fontSize = `${baseSize * (size / 100)}rem`;
+        });
+
+        // Inicialização
+        function initializeApp() {
+            let savedLang = localStorage.getItem('visualNovelReaderLanguage');
+            let browserLang = navigator.language || navigator.userLanguage;
+
+            let initialLang = 'pt-BR'; // Padrão
+            
+            if (savedLang && translations[savedLang]) {
+                initialLang = savedLang;
+            } else if (browserLang) {
+                if (translations[browserLang]) {
+                    initialLang = browserLang;
+                } else if (translations[browserLang.split('-')[0]]) {
+                    initialLang = browserLang.split('-')[0];
+                }
+            }
+
+            setLanguage(initialLang);
+            
+            checkBookmark();
+            updateSpeedControlState();
+            setBackgroundType('image');
+            updateFontColor();
+        }
+
+        initializeApp();
+    </script>
+</body>
+</html>
+
