@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-translate="pageTitle">Leitor Estilo Visual Novel</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- As fontes e estilos serão guardados em cache pelo Service Worker para uso offline -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Lora:ital,wght@0,400;0,700;1,400&family=Roboto+Slab:wght@400;700&family=Source+Code+Pro:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -91,9 +92,12 @@
                     <option value="ko">한국어</option>
                 </select>
             </div>
-            <p class="text-gray-300 mb-6" data-translate="subtitle">Cole o seu texto abaixo. Use # para títulos, **negrito**, *itálico* e comandos como [bg:URL] ou [colorbg:#código].</p>
-
-            <textarea id="textInput" class="w-full h-48 bg-gray-800 border border-gray-700 rounded-lg p-4 text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-500" data-translate="placeholder" placeholder="# Capítulo 1&#10;[bg:https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0]&#10;O cavaleiro chegou a uma floresta.&#10;[colorbg:#1a202c]&#10;De repente, a noite caiu."></textarea>
+            
+            <div class="flex justify-between items-center mt-6 mb-2">
+                <p class="text-gray-300" data-translate="subtitle">Cole o seu texto ou abra um ficheiro.</p>
+                <button id="openFileButton" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-full transition-transform transform hover:scale-105 duration-300 text-sm" data-translate="openFile">Abrir Ficheiro (.txt)</button>
+            </div>
+            <textarea id="textInput" class="w-full h-48 bg-gray-800 border border-gray-700 rounded-lg p-4 text-white resize-none focus:outline-none focus:ring-2 focus:ring-blue-500" data-translate="placeholder" placeholder="# Capítulo 1&#10;[bg:https://.../imagem.jpg]&#10;O cavaleiro chegou...&#10;[colorbg:#1a202c]&#10;De repente, a noite caiu."></textarea>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 my-6">
                 <!-- Bloco de Fundo -->
@@ -150,7 +154,6 @@
             <p id="messageArea" class="text-yellow-300 h-6"></p>
 
             <div class="flex flex-col md:flex-row gap-4 justify-center items-center mt-2">
-                <button id="openFileButton" class="w-full md:w-auto bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-6 rounded-full transition-transform transform hover:scale-105 duration-300" data-translate="openFile">Abrir Ficheiro (.txt)</button>
                 <button id="startButton" class="w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-10 rounded-full text-lg transition-transform transform hover:scale-105 duration-300" data-translate="startReading">
                     Iniciar Leitura
                 </button>
@@ -252,35 +255,7 @@
         <div class="bg-gray-800 text-white p-8 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
             <h2 class="text-2xl font-bold mb-6 text-center" data-translate="helpTitle">Guia Rápido</h2>
             <div class="text-left space-y-4 text-gray-300" data-translate="helpContent">
-                <div>
-                    <h3 class="font-semibold text-lg text-white mb-2">1. Começar a Ler</h3>
-                    <p>Pode <strong>colar</strong> o seu texto diretamente na caixa de texto ou carregar um ficheiro de texto local clicando em <strong>"Abrir Ficheiro (.txt)"</strong>.</p>
-                </div>
-                <div>
-                    <h3 class="font-semibold text-lg text-white mb-2">2. Formatação do Texto</h3>
-                    <p>Para enriquecer a sua leitura, pode usar os seguintes códigos de formatação no seu texto:</p>
-                    <ul class="list-disc list-inside mt-2 space-y-1 pl-4">
-                        <li><code># Título do Capítulo</code> - Cria um título grande.</li>
-                        <li><code>**texto em negrito**</code> - Deixa o texto a <strong>negrito</strong>.</li>
-                        <li><code>*texto em itálico*</code> - Deixa o texto em <em>itálico</em>.</li>
-                    </ul>
-                </div>
-                <div>
-                    <h3 class="font-semibold text-lg text-white mb-2">3. Comandos Dinâmicos (Visual Novel)</h3>
-                    <p>Para uma experiência de visual novel, coloque estes comandos em linhas separadas para alterar o fundo durante a leitura automática:</p>
-                    <ul class="list-disc list-inside mt-2 space-y-1 pl-4">
-                        <li><code>[bg:URL_DA_IMAGEM]</code> - Muda a imagem de fundo.</li>
-                        <li><code>[colorbg:#código_hex]</code> - Muda para uma cor de fundo sólida (ex: <code>[colorbg:#1a202c]</code>).</li>
-                    </ul>
-                </div>
-                <div>
-                    <h3 class="font-semibold text-lg text-white mb-2">4. Guardar o Progresso</h3>
-                    <p>Cada texto tem o seu próprio marcador. Use <strong>"Salvar Marcador"</strong> durante a leitura. Ao colar ou abrir o mesmo texto novamente, o botão <strong>"Carregar Marcador"</strong> ficará disponível.</p>
-                </div>
-                 <div>
-                    <h3 class="font-semibold text-lg text-white mb-2">5. Personalização</h3>
-                    <p>Pode ajustar várias opções antes de começar ou durante a leitura através do botão <strong>"Opções"</strong>, como velocidade, som da digitação, fontes e cores.</p>
-                </div>
+                <!-- O conteúdo da ajuda será inserido aqui pelo JavaScript -->
             </div>
             <button id="closeHelpButton" class="w-full mt-8 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full transition" data-translate="closeButton">Fechar</button>
         </div>
@@ -292,7 +267,7 @@
             'pt-BR': {
                 pageTitle: "Leitor Estilo Visual Novel",
                 title: "Leitor Estilo Visual Novel",
-                subtitle: "Cole o seu texto abaixo. Use # para títulos, **negrito**, *itálico* e comandos como [bg:URL] ou [colorbg:#código].",
+                subtitle: "Cole o seu texto abaixo ou abra um ficheiro.",
                 placeholder: "# Capítulo 1\n[bg:https://.../imagem.jpg]\nO cavaleiro chegou...\n[colorbg:#1a202c]\nDe repente, a noite caiu.",
                 bgSetup: "Configuração do Fundo",
                 bgImage: "Imagem",
@@ -328,7 +303,7 @@
             'en': {
                 pageTitle: "Visual Novel Style Reader",
                 title: "Visual Novel Style Reader",
-                subtitle: "Paste your text below. Use # for titles, **bold**, *italics*, and commands like [bg:URL] or [colorbg:#code].",
+                subtitle: "Paste your text below or open a file.",
                 placeholder: "# Chapter 1\n[bg:https://.../image.jpg]\nThe knight arrived...\n[colorbg:#1a202c]\nSuddenly, night fell.",
                 bgSetup: "Background Setup",
                 bgImage: "Image",
@@ -364,7 +339,7 @@
             'es': {
                 pageTitle: "Lector Estilo Novela Visual",
                 title: "Lector Estilo Novela Visual",
-                subtitle: "Pega tu texto abajo. Usa # para títulos, **negrita**, *cursiva* y comandos como [bg:URL] o [colorbg:#código].",
+                subtitle: "Pega tu texto abajo o abre un archivo.",
                 placeholder: "# Capítulo 1\n[bg:https://.../imagen.jpg]\nEl caballero llegó...\n[colorbg:#1a202c]\nDe repente, cayó la noche.",
                 bgSetup: "Configuración de Fondo",
                 bgImage: "Imagen",
@@ -400,7 +375,7 @@
             'hi': {
                 pageTitle: "विज़ुअल नॉवेल स्टाइल रीडर",
                 title: "विज़ुअल नॉवेल स्टाइल रीडर",
-                subtitle: "अपना टेक्स्ट नीचे पेस्ट करें। शीर्षकों के लिए #, **बोल्ड** के लिए **, *इटैलिक* के लिए * और [bg:URL] या [colorbg:#code] जैसे कमांड का उपयोग करें।",
+                subtitle: "अपना टेक्स्ट नीचे पेस्ट करें या एक फ़ाइल खोलें।",
                 placeholder: "# अध्याय 1\n[bg:https://.../image.jpg]\nशूरवीर आया...\n[colorbg:#1a202c]\nअचानक, रात हो गई।",
                 bgSetup: "पृष्ठभूमि सेटअप",
                 bgImage: "छवि",
@@ -431,12 +406,12 @@
                 sound: "ध्वनि",
                 closeButton: "बंद करें",
                 helpTitle: "त्वरित गाइड",
-                helpContent: `<div><h3 class="font-semibold text-lg text-white mb-2">1. पढ़ना शुरू करें</h3><p>आप अपना टेक्स्ट सीधे टेक्स्ट बॉक्स में <strong>पेस्ट</strong> कर सकते हैं या <strong>"फ़ाइल खोलें (.txt)"</strong> पर क्लिक करके एक स्थानीय टेक्स्ट फ़ाइल लोड कर सकते हैं।</p></div><div><h3 class="font-semibold text-lg text-white mb-2">2. टेक्स्ट फॉर्मेटिंग</h3><p>अपने पढ़ने को समृद्ध करने के लिए, आप अपने टेक्स्ट में निम्नलिखित फॉर्मेटिंग कोड का उपयोग कर सकते हैं:</p><ul class="list-disc list-inside mt-2 space-y-1 pl-4"><li><code># अध्याय का शीर्षक</code> - एक बड़ा शीर्षक बनाता है।</li><li><code>**बोल्ड टेक्स्ट**</code> - टेक्स्ट को <strong>बोल्ड</strong> बनाता है।</li><li><code>*इटैलिक टेक्स्ट*</code> - टेक्स्ट को <em>इटैलिक</em> बनाता है।</li></ul></div><div><h3 class="font-semibold text-lg text-white mb-2">3. डायनामिक कमांड (विज़ुअल नॉवेल)</h3><p>एक विज़ुअल नॉवेल अनुभव के लिए, स्वचालित प्लेबैक के दौरान पृष्ठभूमि बदलने के लिए इन कमांड को अलग-अलग लाइनों पर रखें:</p><ul class="list-disc list-inside mt-2 space-y-1 pl-4"><li><code>[bg:IMAGE_URL]</code> - पृष्ठभूमि छवि बदलता है।</li><li><code>[colorbg:#hex_code]</code> - एक ठोस पृष्ठभूमि रंग में बदलता है (उदा., <code>[colorbg:#1a202c]</code>)।</li></ul></div><div><h3 class="font-semibold text-lg text-white mb-2">4. प्रगति सहेजना</h3><p>प्रत्येक टेक्स्ट का अपना बुकमार्क होता है। पढ़ते समय <strong>"बुकमार्क सहेजें"</strong> का उपयोग करें। जब आप उसी टेक्स्ट को फिर से पेस्ट करते हैं या खोलते हैं, तो <strong>"बुकमार्क लोड करें"</strong> बटन उपलब्ध हो जाएगा।</p></div><div><h3 class="font-semibold text-lg text-white mb-2">5. अनुकूलन</h3><p>आप <strong>"विकल्प"</strong> बटन के माध्यम से शुरू करने से पहले या पढ़ते समय विभिन्न विकल्पों को समायोजित कर सकते हैं, जैसे कि गति, टाइपिंग ध्वनि, फ़ॉन्ट और रंग।</p></div>`
+                helpContent: `<div><h3 class="font-semibold text-lg text-white mb-2">१. पढ़ना शुरू करें</h3><p>आप अपना टेक्स्ट सीधे टेक्स्ट बॉक्स में <strong>पेस्ट</strong> कर सकते हैं या <strong>"फ़ाइल खोलें (.txt)"</strong> पर क्लिक करके एक स्थानीय टेक्स्ट फ़ाइल लोड कर सकते हैं।</p></div><div><h3 class="font-semibold text-lg text-white mb-2">२. टेक्स्ट फॉर्मेटिंग</h3><p>अपने पढ़ने को समृद्ध करने के लिए, आप अपने टेक्स्ट में निम्नलिखित फॉर्मेटिंग कोड का उपयोग कर सकते हैं:</p><ul class="list-disc list-inside mt-2 space-y-1 pl-4"><li><code># अध्याय का शीर्षक</code> - एक बड़ा शीर्षक बनाता है।</li><li><code>**बोल्ड टेक्स्ट**</code> - टेक्स्ट को <strong>बोल्ड</strong> बनाता है।</li><li><code>*इटैलिक टेक्स्ट*</code> - टेक्स्ट को <em>इटैलिक</em> बनाता है।</li></ul></div><div><h3 class="font-semibold text-lg text-white mb-2">३. डायनामिक कमांड (विज़ुअल नॉवेल)</h3><p>एक विज़ुअल नॉवेल अनुभव के लिए, स्वचालित प्लेबैक के दौरान पृष्ठभूमि बदलने के लिए इन कमांड को अलग-अलग लाइनों पर रखें:</p><ul class="list-disc list-inside mt-2 space-y-1 pl-4"><li><code>[bg:IMAGE_URL]</code> - पृष्ठभूमि छवि बदलता है।</li><li><code>[colorbg:#hex_code]</code> - एक ठोस पृष्ठभूमि रंग में बदलता है (उदा., <code>[colorbg:#1a202c]</code>)।</li></ul></div><div><h3 class="font-semibold text-lg text-white mb-2">४. प्रगति सहेजना</h3><p>प्रत्येक टेक्स्ट का अपना बुकमार्क होता है। पढ़ते समय <strong>"बुकमार्क सहेजें"</strong> का उपयोग करें। जब आप उसी टेक्स्ट को फिर से पेस्ट करते हैं या खोलते हैं, तो <strong>"बुकमार्क लोड करें"</strong> बटन उपलब्ध हो जाएगा।</p></div><div><h3 class="font-semibold text-lg text-white mb-2">५. अनुकूलन</h3><p>आप <strong>"विकल्प"</strong> बटन के माध्यम से शुरू करने से पहले या पढ़ते समय विभिन्न विकल्पों को समायोजित कर सकते हैं, जैसे कि गति, टाइपिंग ध्वनि, फ़ॉन्ट और रंग।</p></div>`
             },
             'ja': {
                 pageTitle: "ビジュアルノベル風リーダー",
                 title: "ビジュアルノベル風リーダー",
-                subtitle: "以下にテキストを貼り付けてください。見出しには#、**太字**には**、*斜体*には*、コマンド（[bg:URL]や[colorbg:#code]など）を使用してください。",
+                subtitle: "テキストを以下に貼り付けるか、ファイルを開いてください。",
                 placeholder: "# 第一章\n[bg:https://.../image.jpg]\n騎士が到着した...\n[colorbg:#1a202c]\n突然、夜が訪れた。",
                 bgSetup: "背景設定",
                 bgImage: "画像",
@@ -472,7 +447,7 @@
             'zh-CN': {
                 pageTitle: "视觉小说风格阅读器",
                 title: "视觉小说风格阅读器",
-                subtitle: "在下方粘贴您的文本。使用 # 表示标题，**粗体**，*斜体*，以及像 [bg:URL] 或 [colorbg:#code] 这样的命令。",
+                subtitle: "在下方粘贴您的文本或打开一个文件。",
                 placeholder: "# 第一章\n[bg:https://.../image.jpg]\n骑士到达了...\n[colorbg:#1a202c]\n突然，夜幕降临。",
                 bgSetup: "背景设置",
                 bgImage: "图片",
@@ -508,7 +483,7 @@
             'ko': {
                 pageTitle: "비주얼 노벨 스타일 리더",
                 title: "비주얼 노벨 스타일 리더",
-                subtitle: "아래에 텍스트를 붙여넣으세요. 제목에는 #, **굵게**는 **, *기울임꼴*은 *, [bg:URL] 또는 [colorbg:#code]와 같은 명령을 사용하세요.",
+                subtitle: "아래에 텍스트를 붙여넣거나 파일을여십시오.",
                 placeholder: "# 제1장\n[bg:https://.../image.jpg]\n기사가 도착했다...\n[colorbg:#1a202c]\n갑자기 밤이 되었다.",
                 bgSetup: "배경 설정",
                 bgImage: "이미지",
@@ -743,7 +718,7 @@
             document.querySelectorAll('[data-translate]').forEach(element => {
                 const key = element.getAttribute('data-translate');
                 if (langStrings[key]) {
-                    if (element.tagName === 'TEXTAREA' && element.placeholder) {
+                    if (element.tagName === 'TEXTAREA' && element.hasAttribute('placeholder')) {
                         element.placeholder = langStrings[key];
                     } else if (element.tagName === 'TITLE') {
                         element.textContent = langStrings[key];
@@ -1220,6 +1195,77 @@
             textDisplay.style.fontSize = `${baseSize * (size / 100)}rem`;
         });
 
+        // --- Service Worker para funcionalidade offline ---
+        const registerServiceWorker = () => {
+            if ('serviceWorker' in navigator) {
+                const swCode = `
+                    const CACHE_NAME = 'visual-novel-reader-cache-v2';
+                    const urlsToCache = [
+                        '/',
+                        'https://cdn.tailwindcss.com',
+                        'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Lora:ital,wght@0,400;0,700;1,400&family=Roboto+Slab:wght@400;700&family=Source+Code+Pro:wght@400;700&display=swap'
+                    ];
+
+                    self.addEventListener('install', event => {
+                        event.waitUntil(
+                            caches.open(CACHE_NAME)
+                                .then(cache => {
+                                    console.log('Cache opened');
+                                    return cache.addAll(urlsToCache);
+                                })
+                        );
+                    });
+
+                    self.addEventListener('fetch', event => {
+                        event.respondWith(
+                            caches.match(event.request)
+                                .then(response => {
+                                    if (response) {
+                                        return response; // Serve from cache
+                                    }
+                                    
+                                    const fetchRequest = event.request.clone();
+
+                                    return fetch(fetchRequest).then(
+                                        networkResponse => {
+                                            if (!networkResponse || networkResponse.status !== 200 && networkResponse.type !== 'opaque') {
+                                                return networkResponse;
+                                            }
+                                            
+                                            const responseToCache = networkResponse.clone();
+                                            caches.open(CACHE_NAME)
+                                                .then(cache => {
+                                                    // O request para '/' é o próprio ficheiro HTML.
+                                                    // Em ambientes de desenvolvimento pode aparecer como um URL complexo.
+                                                    // O importante é que a requisição seja apanhada e guardada.
+                                                    cache.put(event.request, responseToCache);
+                                                });
+
+                                            return networkResponse;
+                                        }
+                                    );
+                                })
+                        );
+                    });
+                `;
+                
+                try {
+                    const blob = new Blob([swCode], { type: 'application/javascript' });
+                    const swUrl = URL.createObjectURL(blob);
+
+                    navigator.serviceWorker.register(swUrl)
+                        .then(registration => {
+                            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                        })
+                        .catch(error => {
+                            console.log('ServiceWorker registration failed: ', error);
+                        });
+                } catch(e) {
+                    console.error("Couldn't register Service Worker:", e);
+                }
+            }
+        };
+
         // Inicialização
         function initializeApp() {
             let savedLang = localStorage.getItem('visualNovelReaderLanguage');
@@ -1232,7 +1278,7 @@
             } else if (browserLang) {
                 if (translations[browserLang]) {
                     initialLang = browserLang;
-                } else if (translations[browserLang.split('-')[0]]) {
+                } else if (translations[browserLang.split('-')[0]]) { // Tenta a língua base (ex: 'en' de 'en-US')
                     initialLang = browserLang.split('-')[0];
                 }
             }
@@ -1243,6 +1289,7 @@
             updateSpeedControlState();
             setBackgroundType('image');
             updateFontColor();
+            registerServiceWorker();
         }
 
         initializeApp();
